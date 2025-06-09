@@ -10,8 +10,6 @@ class Node:
         child.parent = self
         self.children.append(child)
 
-    def get_board(self) -> Board:
-        if type(self) is Board:
+    def get_board(self):
+        if self.name == "Board":
             return self
-        else:
-            return self.parent.get_board() if self.parent is not None else None
