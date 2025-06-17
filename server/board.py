@@ -4,11 +4,13 @@ from card import Unit
 
 
 class Player(Node):
+    MAX_HEALTH = 20
+
     def __init__(self, id: int, websocket, children: list[Node] | None = None):
         super().__init__("Player", children if children is not None else [])
         self.hand = []
         self.draw_pile = []
-        self.health = 20
+        self.health = self.MAX_HEALTH
         self.websocket = websocket
         self.id = id
 
@@ -16,7 +18,14 @@ class Player(Node):
         return len(self.hand), len(self.draw_pile), self.health
 
     async def get_user_input(self) -> dict[str, Any]:
-        tasks = [{"type": "play", "from": "cards", "message": "pick a card or (P)ass"}]
+        tasks = [
+            {
+                "type": "play",
+                "from": "cards",
+                "message": "pick a card or (P)ass",
+                "optional": True,
+            }
+        ]
         res = {}
         while len(tasks) != 0:
             await self.websocket.send(tasks[0])
@@ -58,6 +67,7 @@ class Player(Node):
         enemy_data = other.get_stats()
         my_data = self.get_stats()
         game_state: dict = {
+            "type": "sync",
             "enemy": {
                 "health": enemy_data[2],
                 "cards in hand": enemy_data[0],
@@ -73,7 +83,7 @@ class Player(Node):
                 "my_units": board_state[self.id],
             },
         }
-        # send data to client
+        self.websocket.send(game_state)
 
 
 class Turn(Node):
