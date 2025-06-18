@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend ="hatchling.build"
+
+[project]
+name = "vigilant-animals"
+version = "2025.0.0"
+dependencies = ["asyncio", "pygame"]
+requires-python = ">= 3.10"
+authors = [ {name = "KiviGibson"} ]
+description = "TCG like deck building game (Currently backend)"
+readme = "./README.md"
+license = "GPL-3.0-or-later"
+keywords = ["card", "game", "cardgame", "deckbuilding"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vigilant-server"]
