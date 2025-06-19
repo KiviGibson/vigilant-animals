@@ -1,4 +1,4 @@
-from card import Unit, Card, Summoner
+from .card import Unit, Card, Summoner
 
 
 def base_unit() -> Unit:

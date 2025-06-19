@@ -1,6 +1,6 @@
-from node import Node
+from .node import Node
 from typing import Self, Any
-from card import Unit
+from .card import Unit
 
 
 class Player(Node):
@@ -118,7 +118,7 @@ class Board(Node):
     def __init__(
         self,
         name="Board",
-        board_size=0,
+        board_size=5,
         children: list[Node] | None = None,
         turn_clock: Turn | None = None,
     ):
@@ -161,7 +161,7 @@ class Board(Node):
     def get_units_data(self) -> list[list[dict]]:
         res = [
             [
-                unit.get_info() if unit is not None else {"info": "Empty slot"}
+                unit.get_info() if unit is not None else {"info": "Empty"}
                 for unit in units
             ]
             for units in self.player_units

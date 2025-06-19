@@ -1,4 +1,4 @@
-from node import Node
+from .node import Node
 from typing import Self, Callable, Any
 
 
@@ -75,6 +75,14 @@ class Unit(Node):
         if self.on_face_strike is not None:
             for obs in self.on_face_strike:
                 obs()
+
+    def get_info(self) -> dict:
+        return {
+            "name": self.name,
+            "health": self.health,
+            "damage": self.damage,
+            "desc": self.desc,
+        }
 
 
 class Summoner(CardEffect):
