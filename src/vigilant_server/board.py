@@ -6,13 +6,27 @@ from .card import Unit, Card
 class Player(Node):
     MAX_HEALTH = 20
 
-    def __init__(self, id: int, websocket, children: list[Node] | None = None):
+    def __init__(
+        self,
+        id: int,
+        websocket,
+        children: list[Node] | None = None,
+        deck: list[Node] | None = None,
+    ):
         super().__init__("Player", children if children is not None else [])
         self.hand = []
-        self.draw_pile = []
+        self.draw_pile = [] if deck is None else deck
         self.health = self.MAX_HEALTH
         self.websocket = websocket
+        self.honey_combs = 1
+        self.honey = 1
         self.id = id
+
+    def draw(self, num: int = 1) -> None:
+        for _ in range(num):
+            if len(self.draw_pile) <= 0:
+                return
+            self.hand.append(self.draw_pile.pop())
 
     def get_stats(self) -> tuple[int, int, int]:
         return len(self.hand), len(self.draw_pile), self.health
@@ -40,6 +54,8 @@ class Player(Node):
                     card_index = response["index"]
                     if card_index < len(self.hand):
                         for task in self.hand[card_index].get_tasks():
+                            if self.hand[card_index].cost > self.honey:
+                                return {"action": "repeat"}
                             tasks.append(task)
                         res["action"] = "play"
                         res["index"] = response["index"]
@@ -87,7 +103,7 @@ class Board(Node):
         self.passed = False
         self.winner = -1
         self.turn = 1
-        self.
+        self.atack = True
 
     def add_player(self, player: Player) -> None:
         if len(self.players) >= 2:
@@ -96,34 +112,56 @@ class Board(Node):
         self.players.append(player)
 
     async def loop(self) -> None:
+        for player in self.players:
+            player.draw(5)
         while self.winner == -1:
             move = await self.players[self.current].get_user_input()
             match move["action"]:
                 case "play":
+                    self.passed = False
                     self.play_card(
                         self.players[self.current].hand[move["index"]], move["targets"]
                     )
                     self.next_player()
                 case "pass":
-                    self.next_player()
+                    self.skip_turn()
                 case _:
                     continue
             self.sync_game()
 
     def next_player(self) -> None:
         self.current = (self.current + 1) % 2
-    
-    def atack_pahse(self) -> None:
+
+    def skip_turn(self) -> None:
+        if not self.passed:
+            self.passed = True
+            self.next_player()
+            return
+        if self.atack:
+            self.atack_phase()
+        else:
+            self.next_round()
+
+    def atack_phase(self) -> None:
         atacker = self.turn % 2
         defender = 1 if atacker == 0 else 0
         for i in range(5):
-            if isinstance(atacking_unit :=self.player_units[atacker][i], Unit):
+            if isinstance(atacking_unit := self.player_units[atacker][i], Unit):
                 defending_unit = self.player_units[defender][i]
                 killed_unit = atacking_unit.strike(defending_unit)
                 if not killed_unit:
                     continue
                 self.player_units[defender][i] = None
                 del defending_unit
+        self.atack = False
+
+    def next_round(self) -> None:
+        self.turn += 1
+        self.atack = True
+        self.current = self.turn % 2
+        for player in self.players:
+            player.draw(1)
+
     def sync_game(self) -> None:
         board_data = [
             [unit.get_data() for unit in units] for units in self.player_units

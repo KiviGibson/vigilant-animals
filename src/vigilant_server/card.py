@@ -17,11 +17,11 @@ class CardEffect(Node):
 
 class Card(Node):
     def __init__(
-        self, desc: str, name: str, children: list = [], owner=Player | None
+        self, desc: str, name: str, honey_cost: int, children: list = []
     ) -> None:
         self.desc = desc
         self.name = name
-        self.owner = owner
+        self.honey_cost = honey_cost
         super().__init__("Card", children)
 
     def get_task(self) -> list[dict[str, Any]]:
@@ -32,9 +32,11 @@ class Card(Node):
         return res
 
     def play(self, targets: list[tuple[list, int]] = []) -> None:
+        if self.parent is Player:
+            self.parent.honey -= self.honey_cost
         for child in self.children:
             if child.name == "CardEffect":
-                child.play(targets, self.owner)
+                child.play(targets, self.parent)
 
 
 class Unit(Node):

@@ -13,3 +13,6 @@ class Node:
     def get_board(self):
         if self.name == "Board":
             return self
+        if self.parent is None:
+            return None
+        return self.parent.get_board()
