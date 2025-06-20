@@ -1,6 +1,6 @@
 from .node import Node
 from typing import Self, Any
-from .card import Unit
+from .card import Unit, Card
 
 
 class Player(Node):
@@ -45,23 +45,8 @@ class Player(Node):
                         res["index"] = response["index"]
                 case "pass":
                     return {"action": "pass"}
-                case "target":
-                    if response["from"] in ["self", "enemy"]:
-                        board = self.get_board()
-                        if not isinstance(board, Board):
-                            continue
-                        if (
-                            o := board.get_unit((self.id + 1) % 2, response["index"])
-                        ) is None:
-                            continue
-                        res["targets"].append(o)
-                    elif response["from"] == "pass" and "optional" in tasks[0]:
-                        res["targets"].append(None)
-                    else:
-                        if response["index"] > len(self.hand):
-                            continue
-                        res["targets"].append(self.hand[response["index"]])
-        return res
+
+        return res  # {"action: ["play", "pass", "activate"], index: 0, targets: [(self.hand, index)]"}
 
     def sync_board(self, board_state: list[list[dict]], other: Self) -> None:
         enemy_data = other.get_stats()
@@ -86,48 +71,20 @@ class Player(Node):
         self.websocket.send(game_state)
 
 
-class Turn(Node):
-
-    ROUND_START = 0
-    PRE_ATACK = 1
-    POST_ATACK = 2
-    ROUND_END = 3
-
-    def __init__(self, children: list[Node] | None = None):
-        super().__init__("Turn", children if children is not None else [])
-        self.round_counter: int = 1
-        self.active_player: int = 0
-        self.passed: bool = False
-        self.round_state: int = self.ROUND_START
-
-    def action(self, passed: bool) -> tuple[int, int]:
-        if not passed:
-            self.passed = False
-        elif self.passed:
-            self.round_state += 1
-        else:
-            self.passed = True
-        self.active_player = (self.active_player + 1) % 2
-        return self.round_state, self.active_player
-
-    def next_state(self) -> None:
-        self.state = (self.state + 1) % 4
-
-
 class Board(Node):
     def __init__(
         self,
         name="Board",
         board_size=5,
         children: list[Node] | None = None,
-        turn_clock: Turn | None = None,
     ):
         super().__init__(name, children if children is not None else [])
         self.player_units: list[list] = [
             [None for _ in range(board_size)] for _ in range(2)
         ]
         self.players: list[Player] = []
-        self.turn = turn_clock if turn_clock is not None else Turn()
+        self.current: int = 0
+        self.passed = False
         self.winner = -1
 
     def add_player(self, player: Player) -> None:
@@ -138,18 +95,26 @@ class Board(Node):
 
     async def loop(self) -> None:
         while self.winner == -1:
-            move = await self.players[self.turn.active_player].get_user_input()
-            match move["type"]:
+            move = await self.players[self.current].get_user_input()
+            match move["action"]:
                 case "play":
-                    self.turn.action(False)
-                    self.players[self.turn.active_player].hand[move["index"]].play(
-                        move["targets"]
+                    self.play_card(
+                        self.players[self.current].hand[move["index"]], move["targets"]
                     )
+                    self.next_player()
                 case "pass":
-                    self.turn.action(True)
+                    self.next_player()
+                case _:
+                    continue
+            self.sync_game()
+
+    def next_player(self) -> None:
+        self.current = (self.current + 1) % 2
 
     def sync_game(self) -> None:
-        board_data = self.get_units_data()
+        board_data = [
+            [unit.get_data() for unit in units] for units in self.player_units
+        ]
         self.players[0].sync_board(board_data, self.players[1])
         self.players[1].sync_board(board_data, self.players[0])
 
@@ -158,20 +123,13 @@ class Board(Node):
             return self.player_units[player_id][unit_index]
         return None
 
-    def get_units_data(self) -> list[list[dict]]:
-        res = [
-            [
-                unit.get_info() if unit is not None else {"info": "Empty"}
-                for unit in units
-            ]
-            for units in self.player_units
-        ]
-        return res
-
     def add_unit(self, player_id: int, index: int, unit: Unit) -> None:
         self.player_units[player_id][index] = unit
         self.add_child(unit)
 
+    def play_card(self, card: Card, targets: list[tuple[list, int]]) -> None:
+        card.play(targets)
+
 
 def create_board() -> Board:
-    return Board(name="Board", children=[tc := Turn()], turn_clock=tc)
+    return Board(name="Board", board_size=5, children=[])

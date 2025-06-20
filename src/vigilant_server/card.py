@@ -10,7 +10,7 @@ class CardEffect(Node):
     def get_task(self) -> dict:
         return self.task
 
-    def play(self, targets: list[dict[str, Any]]):
+    def play(self, targets: list[tuple[list, int]]):
         pass
 
 
@@ -32,7 +32,7 @@ class Card(Node):
                 res.append(child.get_task())
         return res
 
-    def play(self, targets: list[Node] = []) -> None:
+    def play(self, targets: list[tuple[list, int]] = []) -> None:
         for child in self.children:
             if child.name == "CardEffect":
                 child.play(targets)
@@ -97,7 +97,7 @@ class Summoner(CardEffect):
             },
         )
 
-    def play(self, targets: list[dict[str, Any]]) -> None:
+    def play(self, targets: list[tuple[list, int]]) -> None:
         unit = self.stored_unit()
         target = targets.pop()  # [ {place: list, index: int} ]
-        target["place"][target["index"]] = unit
+        target[0][target[1]] = unit
