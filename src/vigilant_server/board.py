@@ -86,6 +86,8 @@ class Board(Node):
         self.current: int = 0
         self.passed = False
         self.winner = -1
+        self.turn = 1
+        self.
 
     def add_player(self, player: Player) -> None:
         if len(self.players) >= 2:
@@ -110,7 +112,18 @@ class Board(Node):
 
     def next_player(self) -> None:
         self.current = (self.current + 1) % 2
-
+    
+    def atack_pahse(self) -> None:
+        atacker = self.turn % 2
+        defender = 1 if atacker == 0 else 0
+        for i in range(5):
+            if isinstance(atacking_unit :=self.player_units[atacker][i], Unit):
+                defending_unit = self.player_units[defender][i]
+                killed_unit = atacking_unit.strike(defending_unit)
+                if not killed_unit:
+                    continue
+                self.player_units[defender][i] = None
+                del defending_unit
     def sync_game(self) -> None:
         board_data = [
             [unit.get_data() for unit in units] for units in self.player_units
