@@ -1,6 +1,6 @@
 from .node import Node
 from typing import Self, Callable, Any
-from .board import Player
+from .player import Player
 
 
 class CardEffect(Node):
@@ -32,11 +32,11 @@ class Card(Node):
         return res
 
     def play(self, targets: list[tuple[list, int]] = []) -> None:
-        if self.parent is Player:
+        if isinstance(self.parent, Player):
             self.parent.honey -= self.honey_cost
         for child in self.children:
             if child.name == "CardEffect":
-                child.play(targets, self.parent)
+                child.play(self.parent, targets)
 
 
 class Unit(Node):
@@ -46,7 +46,6 @@ class Unit(Node):
         health: int,
         name: str,
         desc: str,
-        owner: Player,
         children: list = [],
         # Sygnały niczym w GODOT lista jest wywoływana po koleji gdy dany event zaistnieje
         # Implementacja Funkcji subskrybującej posiada wymóg **kwargs, by dla każdej funkcji można było wykonywać zadane checki
@@ -61,7 +60,7 @@ class Unit(Node):
         self.health = health
         self.desc = desc
         self.name = name
-        self.owner = owner
+        self.owner: Player | None = None
         self.on_strike = on_strike
         self.on_face_strike = on_face_strike
         self.on_kill = on_kill
@@ -72,7 +71,7 @@ class Unit(Node):
             for obs in on_spawn:
                 obs(myself=self)
 
-    def strike(self, striken: Self | None) -> bool:
+    def strike(self, striken: Self | None) -> int:
         if striken is None:
             return self.face_strike()
         if self.on_strike is not None:
@@ -80,14 +79,14 @@ class Unit(Node):
                 obs(myself=self)
         if striken.damage_delt(self.damage):
             self.on_kill_event(defeated=striken, myself=self)
-            return True
-        return False
+            return -1
+        return 0
 
-    def face_strike(self) -> bool:
+    def face_strike(self) -> int:
         if self.on_face_strike is not None:
             for obs in self.on_face_strike:
                 obs(myself=self)
-        return False
+        return self.damage
 
     def damage_delt(self, damage, **kwargs) -> bool:
         self.health -= damage
@@ -110,19 +109,19 @@ class Unit(Node):
         if self.on_kill is None:
             return
         for func in self.on_kill:
-            func(kwargs)
+            func(**kwargs)
 
     def on_death_event(self, **kwargs) -> None:
         if self.on_death is None:
             return
         for func in self.on_death:
-            func(kwargs)
+            func(**kwargs)
 
     def on_atack_event(self, **kwargs) -> None:
         if self.on_atack is None:
             return
         for func in self.on_atack:
-            func(myself=self)
+            func(myself=self, **kwargs)
 
 
 class Summoner(CardEffect):
