@@ -65,10 +65,8 @@ class Board(Node):
             if isinstance((atacking_unit := self.player_units[atacker][i]), Unit):
                 defending_unit = self.player_units[defender][i]
                 damage = atacking_unit.strike(defending_unit)
-                print(damage)
-                if damage == -1:
-                    self.player_units[defender][i] = None
-                    del defending_unit
+                if damage == 1:
+                    atacking_unit.face_strike(self.players[defender])
                 elif damage > 0:
                     self.players[defender].health -= damage
         self.atack = False
@@ -95,6 +93,7 @@ class Board(Node):
 
     def add_unit(self, player_id: int, index: int, unit: Unit) -> None:
         self.player_units[player_id][index] = unit
+        unit.owner_id = player_id
         self.add_child(unit)
 
     def play_card(self, card: Card, targets: list[tuple[list, int]]) -> None:
