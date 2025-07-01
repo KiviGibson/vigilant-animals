@@ -11,8 +11,11 @@ class CardEffect(Node):
     def get_task(self) -> dict:
         return self.task
 
-    def play(self, player: Player, targets: list[tuple[list, int]]):
+    def play(self, player_id: int, targets: list[tuple[list, int]]):
         pass
+
+    def info(self) -> dict[str, Any]:
+        return {}
 
 
 class Card(Node):
@@ -60,7 +63,7 @@ class Unit(Node):
         self.health = health
         self.desc = desc
         self.name = name
-        self.owner: Player | None = None
+        self.owner_id: int = -1
         self.on_strike = on_strike
         self.on_face_strike = on_face_strike
         self.on_kill = on_kill
@@ -73,20 +76,20 @@ class Unit(Node):
 
     def strike(self, striken: Self | None) -> int:
         if striken is None:
-            return self.face_strike()
+            return 1
         if self.on_strike is not None:
             for obs in self.on_strike:
                 obs(myself=self)
         if striken.damage_delt(self.damage):
             self.on_kill_event(defeated=striken, myself=self)
-            return -1
+            striken.on_death_event(killer=self)
         return 0
 
-    def face_strike(self) -> int:
+    def face_strike(self, player) -> None:
+        player.health -= self.damage
         if self.on_face_strike is not None:
             for obs in self.on_face_strike:
                 obs(myself=self)
-        return self.damage
 
     def damage_delt(self, damage, **kwargs) -> bool:
         self.health -= damage
@@ -136,8 +139,23 @@ class Summoner(CardEffect):
             },
         )
 
-    def play(self, player: Player, targets: list[tuple[list, int]]) -> None:
+    def play(self, player_id: int, targets: list[tuple[list, int]]) -> None:
         unit = self.stored_unit()
-        unit.owner = player
+        unit.owner_id = player_id
+        unit.desc = self.parent.desc if isinstance(self.parent, Card) else ""
+        unit.name = self.parent.name if isinstance(self.parent, Card) else ""
         target = targets.pop()  # [ (list, int) ]
         target[0][target[1]] = unit
+
+    def info(self) -> dict[str, Any]:
+        u = self.stored_unit()
+        if isinstance(self.parent, Card):
+            return {
+                "name": self.parent.name,
+                "type": "unit",
+                "cost": self.parent.honey_cost,
+                "health": u.health,
+                "damage": u.damage,
+                "desc": self.parent.desc,
+            }
+        return {}

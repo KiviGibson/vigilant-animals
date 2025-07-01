@@ -1,4 +1,5 @@
 from .card import Unit, Card, Summoner
+from typing import Callable
 
 
 def base_unit() -> Unit:
@@ -18,3 +19,6 @@ def base_unit_card() -> Card:
         honey_cost=1,
         children=[Summoner(unit=base_unit, children=[])],
     )
+
+
+listed_units: list[Callable] = [base_unit_card]
