@@ -14,6 +14,9 @@ class CardEffect(Node):
     def play(self, player_id: int, targets: list[tuple[list, int]]):
         pass
 
+    def info(self) -> dict[str, Any]:
+        return {}
+
 
 class Card(Node):
     def __init__(
@@ -139,5 +142,20 @@ class Summoner(CardEffect):
     def play(self, player_id: int, targets: list[tuple[list, int]]) -> None:
         unit = self.stored_unit()
         unit.owner_id = player_id
+        unit.desc = self.parent.desc if isinstance(self.parent, Card) else ""
+        unit.name = self.parent.name if isinstance(self.parent, Card) else ""
         target = targets.pop()  # [ (list, int) ]
         target[0][target[1]] = unit
+
+    def info(self) -> dict[str, Any]:
+        u = self.stored_unit()
+        if isinstance(self.parent, Card):
+            return {
+                "name": self.parent.name,
+                "type": "unit",
+                "cost": self.parent.honey_cost,
+                "health": u.health,
+                "damage": u.damage,
+                "desc": self.parent.desc,
+            }
+        return {}
