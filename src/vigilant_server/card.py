@@ -58,6 +58,7 @@ class Unit(Node):
         on_death: list[Callable] | None = None,
         on_kill: list[Callable] | None = None,
         on_atack: list[Callable] | None = None,
+        type: str = "",
     ) -> None:
         self.damage = damage
         self.health = health
@@ -69,6 +70,7 @@ class Unit(Node):
         self.on_kill = on_kill
         self.on_death = on_death
         self.on_atack = on_atack
+        self.type = type
         super().__init__("Unit", children)
         if on_spawn is not None:
             for obs in on_spawn:

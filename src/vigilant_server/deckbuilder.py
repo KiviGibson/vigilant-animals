@@ -59,8 +59,18 @@ class DeckBase:
         get_cards = """SELECT * FROM cards"""
         cursor.execute(get_cards)
         res = []
-        for datum in cursor.fetchall():
-            res.append({})
+        for d in cursor.fetchall():
+            res.append(
+                {
+                    "id": d[0],
+                    "name": d[1],
+                    "cost": d[2],
+                    "type": d[3],
+                    "damage": d[4],
+                    "health": d[5],
+                    "desc": d[6],
+                }
+            )
         return res
 
     def edit_deck(
