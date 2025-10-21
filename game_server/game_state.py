@@ -1,9 +1,6 @@
 from node import Node
 from typing import List, type_check_only, Self
 
-if type_check_only:
-    from board import Board
-
 
 class BoardState(Node):
     lastState: Node
@@ -14,8 +11,8 @@ class BoardState(Node):
     def control(self) -> None:
         pass
 
-    def start_state(self, before: Node) -> None:
-        self.lastState = before
+    def start_state(self, before: Node | None) -> None:
+        self.lastState = before if before is not None else Node()
         self.control()
 
     def end_state(self, next: Node) -> None:
