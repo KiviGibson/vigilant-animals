@@ -8,7 +8,9 @@ class Player(Node):
     honey: int
     honey_comb: int
     hand: List[Card]
+    draw: List[Card]
     id: int
+    health: int
 
     def __init__(self, children: List[Node] | None = None) -> None:
         super().__init__(children)
@@ -16,16 +18,15 @@ class Player(Node):
     def get_input(self) -> PlayerAction:
         current_action = PlayerAction.NoAction
         while current_action == PlayerAction.NoAction:
-            player_text = input("make action:")
+            player_text = input(f"Player {self.id}:")
             description = ""
             match player_text.split(" "):
                 case ["pass"]:
                     current_action = PlayerAction.Pass
                     description = "Player passed"
-                case ["play", num, *args]:
+                case ["play", num]:
                     try:
                         num = int(num)
-                        pos = int(args[0])
                     except Exception:
                         pass
                     else:
@@ -38,3 +39,10 @@ class Player(Node):
         if card.cost > self.honey:
             return PlayerAction.NoAction, "Not Enought Honey"
         return card.play()
+
+    def draw_card(self, num) -> None:
+        self.hand.append(self.draw.pop())
+
+    def on_round_start(self) -> None:
+        self.honey_comb += 1
+        self.honey = self.honey_comb

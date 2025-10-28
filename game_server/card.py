@@ -1,5 +1,5 @@
 from node import Node
-from typing import List
+from typing import List, Tuple
 from enums import PlayerAction
 
 
@@ -11,5 +11,5 @@ class Card(Node):
         self.cost = cost
         super().__init__(children)
 
-    def play(self) -> PlayerAction:
-        return PlayerAction.NoAction
+    def play(self) -> Tuple[PlayerAction, str]:
+        return PlayerAction.NoAction, ""
