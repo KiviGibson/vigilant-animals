@@ -37,11 +37,16 @@ class PlayerTurn(BoardState):
     atackPhase: BoardState
     endRound: BoardState
 
-    def __init__(self, children: List[Node] | None = None) -> None:
+    def __init__(
+        self, children: List[Node] | None = None, player_list: List[Node] = []
+    ) -> None:
         super().__init__(children)
+        self.players = player_list
 
     def control(self) -> None:
-        pass  # TODO: allow Player interaction
+        # TODO: allow Player interaction
+        passed = False
+
         if True:  # TODO: make good system of swaping turns
             self.end_state(self.atackPhase)
         else:
